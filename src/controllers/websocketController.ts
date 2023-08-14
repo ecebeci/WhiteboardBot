@@ -1,21 +1,20 @@
 import { WebSocket } from "ws";
 import { Session, Line } from "../models/Session";
-import { isSessionExist, sessions } from "./sessionController";
+import sessionController from "./sessionController";
 import { WebSocketMessage } from "../models/dto/WebSocketMessage";
 import discordController from "./discordController";
 
 //sessions.set("session1", new Session("session1", new Message()));
 
 function handleWebSocketConnection(ws: WebSocket, sessionID: string) {
-  if (!isSessionExist(sessionID)) {
+  if (!sessionController.isSessionExist(sessionID)) {
     sendErrorMessage(ws, "Session not found");
     ws.close();
     return;
   }
 
-  const session = sessions.get(sessionID);
+  const session = sessionController.getSession(sessionID);
   session?.addWebSocket(ws);
-
   sendGetMessage(ws, session);
 
   ws.on("message", (message: string) => {
@@ -41,9 +40,7 @@ function handleWebSocketConnection(ws: WebSocket, sessionID: string) {
     console.log(session?.webSockets.size);
 
     if (session?.webSockets.size == 0) {
-      discordController.stopMessage(session.message);
-      session.stopPeriodicUpdate();
-      sessions.delete(sessionID);
+      sessionController.stopSession(session);
     }
   });
 

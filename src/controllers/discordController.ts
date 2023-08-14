@@ -1,5 +1,9 @@
 import { Canvas } from "canvas";
 import {
+  ActionRowBuilder,
+  ActionRowData,
+  ButtonBuilder,
+  ButtonStyle,
   Client,
   Collection,
   Events,
@@ -8,6 +12,8 @@ import {
 } from "discord.js";
 import fs = require("node:fs");
 import path = require("node:path");
+import Session from "../models/Session";
+import sessionController from "./sessionController";
 
 const client = new Client({ intents: [GatewayIntentBits.Guilds] });
 
@@ -63,17 +69,66 @@ function handleDiscordConnection(token: string) {
   client.login(token);
 }
 
-function updateMessageCanvas(message: Message | undefined, canvas: Canvas) {
+async function createMessage(interaction: any, session: Session): Promise<any> {
+  // const linkButton = new ButtonBuilder()
+  // .setCustomId("link")
+  // .setLabel("Link")
+  // .setStyle(ButtonStyle.Primary);
+
+  const stopButton = new ButtonBuilder()
+    .setCustomId("stop")
+    .setLabel("Stop Session")
+    .setStyle(ButtonStyle.Danger);
+
+  const row: ActionRowBuilder = new ActionRowBuilder().addComponents(
+    stopButton
+  );
+
+  const response = await interaction.reply({
+    content: `Id: ${session.id}`,
+    components: [row],
+  });
+
+  const message = await interaction.fetchReply();
+  if (!(message instanceof Message)) {
+    console.error("Invalid message provided." + message);
+  } else {
+    session.setMessage(message);
+  }
+
+  return response;
+}
+
+function updateMessageCanvas(message: Message, canvas: Canvas) {
   const buffer = canvas.toBuffer("image/png");
+  if (!(message instanceof Message)) {
+    console.error("Invalid message provided." + message);
+    return;
+  }
   message?.edit({ files: [{ attachment: buffer }] });
+}
+
+function updateMessageComponents(
+  message: Message,
+  components: ActionRowBuilder<ButtonBuilder> | ActionRowData<ButtonBuilder>
+) {
+  message?.edit({ components: [components] });
 }
 
 function stopMessage(message: Message | undefined) {
   message?.edit({ content: "Stopped", components: [] });
 }
 
+function deleteMessage(message: Message | undefined) {
+  message?.delete();
+  message?.channel.send("Deleted");
+}
+
 export default {
   handleDiscordConnection,
   updateMessageCanvas,
+  updateMessageComponents,
+  createMessage,
   stopMessage,
+  deleteMessage,
 };

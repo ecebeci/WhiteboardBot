@@ -1,7 +1,7 @@
 {
   "name": "whiteboard-bot",
   "version": "1.0.0",
-  "main": "index.js",
+  "main": "server.js",
   "license": "MIT",
   "dependencies": {
     "@types/express": "^4.17.17",
@@ -19,7 +19,6 @@
     "fs": "^0.0.1-security",
     "handlebars": "^4.7.8",
     "nodemon": "^3.0.1",
-    "ts-node": "^10.9.1",
     "typescript": "^5.1.6",
     "ws": "^8.13.0"
   },

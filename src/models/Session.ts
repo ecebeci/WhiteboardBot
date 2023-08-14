@@ -1,9 +1,9 @@
-// src/models/Session.ts
 import { WebSocket } from "ws";
 import { WebSocketMessage } from "./dto/WebSocketMessage";
 import { createCanvas, Canvas } from "canvas";
 import { Message } from "discord.js";
-import discordController from "../controllers/discordController";
+//import discordController from "../controllers/discordController";
+type CanvasUpdateCallback = (message: Message, canvas: Canvas) => void;
 
 interface Line {
   x1: number;
@@ -17,12 +17,14 @@ export default class Session {
   webSockets: Set<WebSocket>;
   lines: Line[] = [];
   canvas: Canvas;
-  message: Message | undefined = undefined;
+  message: Message;
   updateInterval: NodeJS.Timeout | undefined;
+  private canvasUpdateCallback: CanvasUpdateCallback | null = null;
 
   constructor(id: string) {
     this.id = id;
     this.webSockets = new Set();
+    this.message = {} as Message;
     this.canvas = createCanvas(1920, 1080);
     this.startPeriodicUpdate();
   }
@@ -65,6 +67,10 @@ export default class Session {
     clearInterval(this.updateInterval);
   }
 
+  setCanvasUpdateCallback(callback: CanvasUpdateCallback) {
+    this.canvasUpdateCallback = callback;
+  }
+
   renderCanvas() {
     const ctx = this.canvas.getContext("2d");
     ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
@@ -78,7 +84,9 @@ export default class Session {
       ctx.lineTo(line.x2, line.y2);
       ctx.stroke();
     });
-    discordController.updateMessageCanvas(this.message, this.canvas);
+    if (this.canvasUpdateCallback) {
+      this.canvasUpdateCallback(this.message, this.canvas);
+    }
   }
 
   setMessage(message: Message) {
