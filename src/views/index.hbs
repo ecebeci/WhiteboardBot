@@ -30,6 +30,10 @@
           const line = data;
           drawLine(line.x1, line.y1, line.x2, line.y2);
         }
+
+        if (type === "stop") {
+          alert("Session has been stopped!");
+        }
       });
 
 

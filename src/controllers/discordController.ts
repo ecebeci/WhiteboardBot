@@ -19,7 +19,7 @@ const client = new Client({ intents: [GatewayIntentBits.Guilds] });
 
 client.commands = new Collection();
 
-function handleDiscordConnection(token: string) {
+function handleDiscordConnection(token: string): void {
   const commandsPath = path.join(__dirname, "../discord/commands");
   const commandFiles = fs
     .readdirSync(commandsPath)
@@ -99,27 +99,37 @@ async function createMessage(interaction: any, session: Session): Promise<any> {
   return response;
 }
 
-function updateMessageCanvas(message: Message, canvas: Canvas) {
+async function updateMessageCanvas(
+  message: Message,
+  canvas: Canvas
+): Promise<Message<boolean> | undefined> {
   const buffer = canvas.toBuffer("image/png");
   if (!(message instanceof Message)) {
     console.error("Invalid message provided." + message);
     return;
   }
-  message?.edit({ files: [{ attachment: buffer }] });
+
+  return message?.edit({ files: [{ attachment: buffer }] }).catch((e) => {
+    return Promise.reject(new Error(e));
+  });
 }
 
 function updateMessageComponents(
   message: Message,
   components: ActionRowBuilder<ButtonBuilder> | ActionRowData<ButtonBuilder>
-) {
+): void {
   message?.edit({ components: [components] });
 }
 
-function stopMessage(message: Message | undefined) {
-  message?.edit({ content: "Stopped", components: [] });
+async function stopMessage(
+  message: Message | undefined
+): Promise<Message<boolean> | undefined> {
+  return message?.edit({ content: "Stopped", components: [] }).catch((e) => {
+    return Promise.reject(new Error(e));
+  });
 }
 
-function deleteMessage(message: Message | undefined) {
+function deleteMessage(message: Message | undefined): void {
   message?.delete();
   message?.channel.send("Deleted");
 }

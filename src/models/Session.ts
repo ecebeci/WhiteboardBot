@@ -2,8 +2,11 @@ import { WebSocket } from "ws";
 import { WebSocketMessage } from "./dto/WebSocketMessage";
 import { createCanvas, Canvas } from "canvas";
 import { Message } from "discord.js";
-//import discordController from "../controllers/discordController";
-type CanvasUpdateCallback = (message: Message, canvas: Canvas) => void;
+import sessionController from "../controllers/sessionController";
+type CanvasUpdateCallback = (
+  message: Message,
+  canvas: Canvas
+) => Promise<Message | void>;
 
 interface Line {
   x1: number;
@@ -19,12 +22,13 @@ export default class Session {
   canvas: Canvas;
   message: Message;
   updateInterval: NodeJS.Timeout | undefined;
-  private canvasUpdateCallback: CanvasUpdateCallback | null = null;
+  canvasUpdateCallback: CanvasUpdateCallback | undefined;
 
   constructor(id: string) {
     this.id = id;
     this.webSockets = new Set();
     this.message = {} as Message;
+    this.canvasUpdateCallback = undefined;
     this.canvas = createCanvas(1920, 1080);
     this.startPeriodicUpdate();
   }
@@ -47,6 +51,7 @@ export default class Session {
 
   stopAllWebSocket() {
     this.webSockets.forEach((ws) => {
+      ws.send(JSON.stringify({ type: "stop", data: "Session stopped!" }));
       ws.close();
     });
   }
@@ -85,7 +90,10 @@ export default class Session {
       ctx.stroke();
     });
     if (this.canvasUpdateCallback) {
-      this.canvasUpdateCallback(this.message, this.canvas);
+      this.canvasUpdateCallback(this.message, this.canvas).catch((e) => {
+        console.error(e);
+        sessionController.stopSession(this);
+      });
     }
   }
 

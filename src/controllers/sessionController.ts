@@ -16,8 +16,9 @@ function createSession(): Session {
 }
 
 function stopSession(session: Session) {
-  discordController.stopMessage(session.message);
+  discordController.stopMessage(session.message).catch(console.error);
   session.stopPeriodicUpdate();
+  session.stopAllWebSocket();
   deleteSession(session.id);
 }
 

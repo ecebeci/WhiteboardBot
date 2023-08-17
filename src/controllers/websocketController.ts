@@ -2,9 +2,6 @@ import { WebSocket } from "ws";
 import { Session, Line } from "../models/Session";
 import sessionController from "./sessionController";
 import { WebSocketMessage } from "../models/dto/WebSocketMessage";
-import discordController from "./discordController";
-
-//sessions.set("session1", new Session("session1", new Message()));
 
 function handleWebSocketConnection(ws: WebSocket, sessionID: string) {
   if (!sessionController.isSessionExist(sessionID)) {
@@ -17,9 +14,13 @@ function handleWebSocketConnection(ws: WebSocket, sessionID: string) {
   session?.addWebSocket(ws);
   sendGetMessage(ws, session);
 
+  console.log(
+    `Session Id: ${session?.id} Current Users ${session?.webSockets.size}`
+  );
+
   ws.on("message", (message: string) => {
     try {
-      console.log(message);
+      // console.log(message);
       const parsedMessage: WebSocketMessage<any> = JSON.parse(message);
       const messageType = parsedMessage.type;
       const messageData = parsedMessage.data;
@@ -37,14 +38,15 @@ function handleWebSocketConnection(ws: WebSocket, sessionID: string) {
 
   ws.on("close", () => {
     session?.removeWebSocket(ws);
-    console.log(session?.webSockets.size);
+    console.log(
+      `Session Id: ${session?.id} Current Users ${session?.webSockets.size} `
+    );
 
+    // when no one is connected to the session, stop the session
     if (session?.webSockets.size == 0) {
       sessionController.stopSession(session);
     }
   });
-
-  // 5 Dk icinde kimse kalmazsa gorsel sadece discord da  atilacak!
 }
 
 const messageHandlers: Record<
